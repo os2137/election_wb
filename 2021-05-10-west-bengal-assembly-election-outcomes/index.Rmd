@@ -1,0 +1,1379 @@
+---
+title: "West Bengal Assembly Election Outcomes"
+author: "Onkar Singh"
+date: '2021-05-10'
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+categories: []
+tags: []
+slug: west-bengal-assembly-election-outcomes
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE, 
+  message = FALSE, 
+  echo = FALSE, 
+  results = TRUE, 
+  fig.width = 10, 
+  fig.height = 8, 
+  out.width = "90%", 
+  out.height = "90%"
+)
+
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(scales)
+# theme_set(theme_light(base_size = 16))
+library(ggrepel)
+library(esquisse)
+library(modeldata)
+theme_set(theme_light())
+# theme_set(ggthemes::theme_wsj(base_size = 18, base_family = "Graphik", title_family = "Graphik"))
+```
+
+## Reading data
+
+```{r results = FALSE}
+wb <- read_csv("TCPD_AE_West_Bengal_2021-5-10.csv") %>% 
+  janitor::clean_names() 
+```
+
+```{r}
+
+# data("presidential")
+# data("mpg")
+# data("drinks")
+# esquisser(viewer = "browser")
+# 
+# esquisse::esquisser(presidential)
+```
+
+```{r results = FALSE}
+wb %>% count(party, sort = T)
+```
+
+West Bengal Assembly election was one of the most keenly watched Assembly election in any Indian state. One of the reasons for this interest was unexpected rise of Bharatiya Janata Party in a state mostly known for its contests between the Left and the Trinmool Congress. The BJP had only 3 seats in the last Assembly election of 2016 whereas the ruling TMC had 212. BJP was never a major player in state expect during the last Parliamentary election where BJP bagged 18 of the 42 parliament seats. This rasied a very high hopes in the saffron camp and they put all their political might in the recently concluded West Bengal Legislative Assembly election where it was pitted against the ruling TMC led by firebrand leader Mamta Banerjee. The stakes were so high that BJP made some of its central ministers resign to contest the assembly elections to bolster party chances in the state traditionally considered home to the non-BJP political forces. This was coupled with the high decimal election campaign lead by the Prime Minister Narendra Modi, along with Home Minister Amit Shah and BJP President JP Nadda. On the other hand, Two time chief minister Mamata Banerjee led the incumbent party from the front and ran a highly successful campaingn leading to her party's victory in the Assembly Election. This marked the beginning of the third term of the TMC government in the State.
+
+While the BJP ran the campaign targeting 200 seats, the TMC's poll strategist Prashant Kishor was so confident that he declared if BJP crossed the 100 seats he would leave his role as political adviser.
+
+The opinion and exit polls were equally divided some giving edge to the ruling TMC while other giving slight edge to the BJP. However, the final results on 2nd May 2021, put all speculations to rest with TMC winning 213 of the seats, whereas BJP managed to win only 77 seats.
+
+This paper analyzes the election results data obtained from Election Commission of India and Ashoka University.
+
+## Total Number of Political Parties in the Fray
+
+A total of 59 political parties took part in West Bengal assembly election 2021. Top
+
+```{r}
+wb %>% 
+  filter(party != "NOTA") %>% 
+  count(party, name = "number_of_seats_contested" , sort = T) %>% 
+  flextable::flextable() %>% 
+  flextable:: set_caption("Total Number of Political Parties in the Election)")%>% 
+  flextable::border_outer() %>% 
+  flextable::border_inner() %>% 
+  flextable::bg(bg = "#ECE7FF") %>% 
+  flextable::bg(bg = "#7E00FF", part = "header") %>% 
+  flextable::font(fontname = "Graphik", part = "all") %>% 
+  flextable::fontsize(size = 14, part = "header") %>% 
+  flextable::fontsize(size =12) %>% 
+  flextable::color(color = "white", part = "header") %>% 
+  flextable::autofit()
+  
+```
+
+10 Parties with number of seats contested
+
+## Top Political parties by number of seats contested
+
+```{r}
+wb <- wb %>% 
+  filter(party != "NOTA")
+
+wb%>% 
+  filter(party != "IND") %>% 
+  count(party, name = "number_of_seats_contested" , sort = T) %>% 
+  head(8) %>% 
+  mutate(party = fct_reorder(party, number_of_seats_contested)) %>% 
+  ggplot(aes(y = party, x = number_of_seats_contested, fill = party))+
+  geom_col() +
+  labs(title = "Total seats contested by political parties", 
+              x = "Total number of seats contested", 
+       y = "Political parties" 
+       ) +
+  theme(legend.position = "none") +
+  # ggthemes::theme_wsj() +
+  theme(plot.title = element_text(size = 14))
+```
+
+## Total number of turncoats fielded by each political party
+
+```{r}
+wb <- wb %>% 
+  filter(party != "NOTA")
+
+wb%>% 
+  filter(party != "IND") %>% 
+  count(party, turncoat, name = "number_of_turncoats" , sort = T) %>% 
+  filter(party %in% c("BJP", "AITC", "CPM", "INC")) %>% 
+  ggplot(aes(y = party, x = number_of_turncoats, fill = turncoat))+
+  geom_col() +
+  labs(title = "Total number of turncoats fielded by top 4 political parties", 
+       subtitle = "West Bengal assembly election, April-May 2021", 
+       x = "Total number of seats contested", 
+       y = "Political parties" 
+       ) +
+  theme(legend.position = "none") +
+  ggthemes::theme_wsj()
+```
+
+## Total number of repeat political party
+
+```{r}
+wb%>% 
+  filter(party != "IND") %>% 
+  count(party, same_party, name = "number_of_candidates" , sort = T) %>% 
+  filter(party %in% c("BJP", "AITC", "CPM", "INC")) %>% 
+  ggplot(aes(y = party, x = number_of_candidates, fill = same_party))+
+  geom_col() +
+  labs(title = "Total number of seats contested by top 4 political parties", 
+       subtitle = "West Bengal assembly election, April-May 2021", 
+       x = "Total number of seats contested", 
+       y = "Political parties" 
+       ) +
+  theme(legend.position = "none") 
+```
+
+## Total number of repeat constituency by candiates
+
+```{r}
+wb%>% 
+  filter(party != "IND") %>% 
+  count(party, same_constituency, name = "number_of_candidates" , sort = T) %>% 
+  filter(party %in% c("BJP", "AITC", "CPM", "INC")) %>% 
+  ggplot(aes(y = party, x = number_of_candidates, fill = same_constituency))+
+  geom_col() +
+  labs(title = "Total number of seats contested by top 4 political parties", 
+              x = "Total number of seats contested", 
+       y = "Political parties" 
+       ) +
+  theme(legend.position = "none") +
+ 
+  theme(plot.title = element_text(size = 14))
+```
+
+## Total number of repeat candidates
+
+```{r}
+wb%>% 
+  filter(party != "IND") %>% 
+  count(party, recontest
+, name = "number_of_candidates" , sort = T) %>% 
+  filter(party %in% c("BJP", "AITC", "CPM", "INC")) %>% 
+  ggplot(aes(y = party, x = number_of_candidates, fill = recontest
+))+
+  geom_col() +
+  labs(title = "Total number of seats contested by top 4 political parties", 
+              x = "Total number of seats contested", 
+       y = "Political parties" 
+       ) +
+  theme(legend.position = "none") +
+  
+  theme(plot.title = element_text(size = 14)) +
+  theme(legend.text = element_text(color ="black", size = 9), 
+        legend.title = element_text(color = "tomato", size = 10), 
+        legend.position =  "bottom") +
+  scale_fill_discrete(name = "Recontested", labels = c("Yes", "No") )
+
+# reference for labels title position and labels: https://www.datanovia.com/en/blog/ggplot-legend-title-position-and-labels/
+```
+
+## Total number of incumbents
+
+```{r}
+wb%>% 
+  filter(party != "IND") %>% 
+  count(party, incumbent
+, name = "number_of_candidates" , sort = T) %>% 
+  filter(party %in% c("BJP", "AITC", "CPM", "INC")) %>% 
+  ggplot(aes(y = party, x = number_of_candidates, fill = incumbent
+))+
+  geom_col() +
+  labs(title = "Total number of seats contested by top 4 political parties", 
+       subtitle = "West Bengal assembly election, April-May 2021", 
+       x = "Total number of seats contested", 
+       y = "Political parties" 
+       ) +
+  theme(legend.position = "none") 
+```
+
+## Total number of Votes secured by major political party
+
+```{r}
+wb_total_percent <-  wb %>% 
+  group_by(party) %>% 
+  summarize(total_votes = sum(votes)) %>% 
+  mutate(percent_votes = total_votes/sum(total_votes)) 
+
+
+
+wb_total_percent%>% 
+  arrange(desc(total_votes)) %>% 
+  head(5) %>% 
+  mutate(party = fct_reorder(party, total_votes)) %>% 
+  ggplot(aes(total_votes, party, fill = party)) +
+  geom_col(size = 6) + 
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", CPM = "#D52C3C", INC = "#E4FC2C")) +
+  scale_x_continuous(labels = scales::comma) +
+  geom_text(aes(label = (total_votes)), hjust = 0.001, vjust = 0.3) +
+  coord_cartesian(xlim = c(0, 40000000)) +
+  # ggthemes::theme_wsj() +
+  labs(title = "Total number of votes secured", 
+       x = "Total number of votes", 
+       y = "Political parties") +
+ theme(axis.text.x = element_text(colour = "grey20", size = 9, angle = 90, hjust = 0.5, vjust = 0.5))
+
+  
+  
+```
+
+While the ruling party TMC bagged 2.86 crore or 28.6 million votes, BJP got 2.27 corores or 22.7 million votes. CPM bagged 28 lakhs or 2.8 million votes, while Congress could manage to over 17 lakha or 1.7 million votes.
+
+## Total percentage of Votes secured by each political party
+
+```{r}
+wb_total_percent <- wb_total_percent%>% 
+  arrange(desc(percent_votes)) %>% 
+  head(10) %>% 
+  mutate(percent_votes = round(percent_votes,2
+                               )) 
+
+wb_total_percent %>% 
+  head(5) %>% 
+  mutate(party = fct_reorder(party, percent_votes)) %>% 
+  ggplot(aes(percent_votes, party, fill = party)) +
+  geom_col() +
+  expand_limits(x = c(0.1, 0.7)) +
+  scale_x_continuous(
+                     breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7), 
+label = c("10%", "20%", "30%","40%", "50%","60%", "70%")) +
+                      
+scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", CPM = "#D52C3C", INC = "#E4FC2C"))+
+  geom_text_repel(aes(label = percent(round(percent_votes, 2))), hjust = 0.5, vjust = 1) +
+  # ggthemes::theme_wsj() +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  labs(x = "Voting Percentage", 
+       y = "Percentage Votes")
+  
+```
+
+The TMC emerged victorious with 38% of the total popular votes while the opposition BJP got 39% of the popular votes. CPM managed to win 5% followed by Congress and Independents with 3% and 2 % of the popular votes. This shows that contest was highly polarized and bipolar in nature between the incumbent Trinmool Congress and the challenger Bhartiya Janata Party.
+
+## Total number of seats secured by each political party
+
+```{r}
+wb %>% 
+  filter(position == 1) %>% 
+  count(party, sort = T) %>% 
+  mutate(party = fct_reorder(party,n)) %>% 
+  ggplot(aes(n, party,
+             fill = party)) + 
+  geom_col() +
+  expand_limits(x = c(0, 250)) +
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E"))+
+  geom_text_repel(aes(label = n), hjust = 0.5, vjust = 1) +
+  labs(x = "Total number of seats", 
+       y = "Political Party", 
+       title = "Total number of seats by political parties") +
+  
+  # ggthemes::theme_wsj() +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+TMC won 213 (73% of total seats) seats bettering even its 2016 tallies whereas the BJP came to distant second with 77 (26%) seats even though raising its stock significantly in the West Bengal Assembly from its 2016 tally of a meager 3.
+
+## Total number of seats secured by each political party by region
+
+```{r , fig.width = 10, fig.height = 10, units = "in"}
+wb %>% 
+  filter(position == 1) %>% 
+  count(party, sub_region, sort = T) %>% 
+  mutate(party = fct_reorder(party, n)) %>% 
+    ggplot(aes(n, party, fill = party)) + 
+    geom_col(width = 0.3) +
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E")) +
+  geom_text_repel(aes(label = n), color = "black", hjust = 1, vjust =0.5) +
+  
+  facet_wrap(~sub_region, scales = "free_y") +
+  theme(strip.text = element_text(
+        size = 10, color = "white", face = "bold.italic"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) + 
+  coord_cartesian(xlim = c(0, 120)) +
+  labs(title = "Number of seats won by parties in each region", 
+       subtitle = "2021 assembly election", 
+       x = "Number of seats won", 
+        y = "Party") +
+   guides(fill = guide_legend(reverse=TRUE)) 
+ 
+```
+
+TMC lead the seats by a huge margins in the Presidency (TMC: 111 vs BJP: 16) and Burdwan (TMC: 79 vs BJP: 31) divisions whereas BJP emerged as a dominant force in the Jalpaiguri division ( BJP 30 vs TMC 23).
+
+```{r}
+ggsave("total_number_of_seats_by_region.png", width = 20, height = 10, units = "cm")
+```
+
+## Total number of seats secured by each political party by district
+
+```{r, fig.width = 20, fig.height = 15, units = "in"}
+wb %>% 
+  filter(position == 1) %>% 
+  count(party, district_name, sort = T) %>% 
+  mutate(party = fct_reorder(party, n)) %>% 
+    ggplot(aes(n, party, fill = party)) + 
+    geom_col(size = 0.3) +
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E")) +
+  geom_text_repel(aes(label = n), hjust = 0.5, vjust = 1, size = 5) +
+  facet_wrap(~district_name, scales = "free_y") +
+  theme(strip.text = element_text(
+        size = 12, color = "white", face = "bold.italic"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  coord_cartesian(xlim = c(0, 40)) +
+  labs(title = "Number of seats won by parties in each district", 
+       subtitle = "2021 assembly election", 
+       x = "Number of seats won", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) 
+
+
+# checkout the stuff about freeing scales
+```
+
+Out of the total 19 districts, TMC bagged more number of seats in 12 districts (Bardhaman, Birbhum, Hooghly, Howrah, Kolkata Corporation, Maldah, Murshidabad, North 24 Parganas, Paschim Medinipur, Purba Medinipur, South 24 Parganas, Uttar Dinajpur ) whereas BJP had bigger share of seats in only 6 districts (Bankura, Cooch Behar, Darjeeling, Jalpaiguri, Nadia and Purulia). BJP didnt win any seats in Howrah (16), Kolkata Corproation(11) and South 24 Parganas(30) districts, whereas TMC din't win any seat in Darjeeling(6).
+
+```{r}
+ggsave("total_number_of_seats_by_district.png", width = 30, height = 15, units = "cm")
+```
+
+
+
+### First three candidates in Bankura District
+```{r}
+library(tidytext) # for reorder_within function for ordering bars under facet, its important to keep scales = "free_x" within facet_wrap for reference check out https://juliasilge.com/blog/reorder-within/
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "BANKURA") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "Bankura District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+### BARDHAMAN District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "BARDHAMAN") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "BARDHAMAN District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+### BIRBHUM District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "BIRBHUM") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "BIRBHUM District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### COOCH BEHAR District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "COOCH BEHAR") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "COOCH BEHAR District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### DAKSHIN DINAJPUR District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "DAKSHIN DINAJPUR") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "DAKSHIN DINAJPUR District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+### DARJEELING District: Winners per constituency and top 3 candidate
+
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "DARJEELING") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "DARJEELING District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF",  CPM = "#D52C3C", INC = "#E4FC2C")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+### HOOGHLY District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "HOOGHLY") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "HOOGHLY District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### HOWRAH District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "HOWRAH") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "HOWRAH District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### JALPAIGURI District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "JALPAIGURI") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "JALPAIGURI District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+### KOLKATA CORPORATION District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "KOLKATA CORPORATION") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "KOLKATA CORPORATION District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### MALDAH District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "MALDAH") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "MALDAH District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### MURSHIDABAD District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "MURSHIDABAD") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "MURSHIDABAD District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### NADIA District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "NADIA") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "NADIA District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+### NORTH 24 PARGANAS District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "NORTH 24 PARGANAS") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "NORTH 24 PARGANAS District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 75000, 150000), 
+label = c("25K", "75K", "150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+
+### PASCHIM MEDINIPUR District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "PASCHIM MEDINIPUR") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "PASCHIM MEDINIPUR District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 75000, 150000), 
+label = c("25K", "75K", "150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+
+### PURBA MEDINIPUR District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "PURBA MEDINIPUR") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "PURBA MEDINIPUR District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+
+### PURULIA District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "PURULIA") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "PURULIA District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### SOUTH 24 PARGANAS District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "SOUTH 24 PARGANAS") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "SOUTH 24 PARGANAS District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 75000, 150000), 
+label = c("25K", "75K", "150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 8, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+### UTTAR DINAJPUR District: Winners per constituency and top 3 candidate
+```{r}
+wb %>% 
+  filter(position %in% c(1,2,3)) %>% 
+  filter(district_name == "UTTAR DINAJPUR") %>%
+  group_by(party, constituency_name) %>% 
+  arrange(desc(votes)) %>% 
+  ungroup() %>% 
+  mutate(votes_k = round(votes/1000,0)) %>% 
+  mutate(votes_k_nice_label = paste0(votes_k,"K")) %>%
+  mutate(party = fct_reorder(party, votes)) %>%
+  # mutate(constituency_name = as.factor(constituency_name),
+  #        party= reorder_within(party, votes, constituency_name)) %>%
+  ggplot(aes(votes, party, fill = party)) +
+  geom_col() +
+  facet_wrap(~constituency_name, scales = "free_y") +
+  
+  labs(title = "UTTAR DINAJPUR District:First three candiates in each seat",
+       subtitle = "party with highest votes win that seat", 
+       x = "Number of votes secured", 
+        y = "Political party") +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  geom_col(size = 0.3) +
+  
+ scale_x_continuous(
+                     breaks = c(25000, 50000, 75000, 100000, 150000), 
+label = c("25K", "50K", "75K", "100K","150K")) +
+  expand_limits(x = c(10000, 150000))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E", CPM = "#D52C3C", INC = "#E4FC2C",  AIFB = "#1a6600", RSP = "#664d00")) +
+  geom_text_repel(aes(label = votes_k_nice_label ), hjust = 0.5, vjust = 1, size = 3) +
+    theme(strip.text = element_text(
+        size = 9, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  theme(legend.position = "none")
+```
+
+```{r}
+wb %>% 
+  count(district_name)
+
+```
+
+
+## Has the voters rewarded the turncoats
+
+```{r}
+wb %>% 
+  filter(position == 1) %>% 
+  mutate(party = factor(party, levels = c("AITC", "BJP", "RSSCMJP", "IND"))) %>%
+  count(party, sort = T) %>% 
+   mutate(party = fct_reorder(party, n)) %>% 
+    ggplot(aes(n, party, fill = party)) + 
+    geom_col() +
+  scale_fill_discrete(breaks=c("AITC", "BJP", "RSSCMJP", "IND"))+
+    scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E"))+
+  geom_text(aes(label = n), hjust = 0.001) +
+  coord_cartesian(xlim = c(0,250)) + 
+  labs( title = "Total number of seats won in Assembly", 
+        x = "Total number of seats", 
+        y = "Political party") +
+  guides(fill = guide_legend(reverse=TRUE)) +
+  theme(axis.text.x = element_text(colour = "grey20", size = 10, angle = 90, hjust = 0.5, vjust = 0.5))
+  
+```
+
+## Gender split of Winner candidates by party
+
+```{r}
+wb %>% 
+  filter(position == 1) %>% 
+  count(party, sex, sort = T) %>% 
+  mutate(party = fct_reorder(party, n)) %>% 
+    ggplot(aes(n, party, fill = party)) + 
+    geom_col() +
+  geom_text_repel(aes(label = n), color = "black", vjust = 0.5, hjust = 1) +
+  facet_wrap(~sex, scales = "free_x") +
+  theme(strip.text = element_text(
+        size = 12, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     ))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E")) +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  labs(x = "Number of seats", 
+       y = "Party", 
+       title = "Gender distribution of seats won")
+  # ggthemes::theme_wsj()
+```
+
+Out of the total seats won by TMC, the seats won by women were 33 or 15.5% of the total seats of 213 whereas for the BJP, it was 7 or 9% of the total seats of 77.
+
+## Winner by constituency type
+
+```{r, fig.width=10, fig.height=10}
+wb %>% 
+  filter(position == 1) %>% 
+  count(party, constituency_type, sort = T) %>% 
+  mutate(party = fct_reorder(party, n)) %>% 
+    ggplot(aes(n, party, fill = party)) + 
+    geom_col(width = 0.5) +
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E"))+
+  geom_text_repel(aes(label = n), color = "black", hjust = 1) +
+  facet_grid(~constituency_type ) +
+   guides(fill = guide_legend(reverse=TRUE)) +
+  theme(strip.text = element_text(
+        size = 12, color = "white", face = "bold"
+        ), 
+        strip.background = element_rect(
+     color="black", fill="purple", size=1.5, linetype="solid"
+     )) +
+  labs (x = "Number of seats")+
+  theme(axis.text.x = element_text(colour = "grey20", size = 9, angle = 90, hjust = 0.5, vjust = 0.5)) +
+  labs(x = "Party", 
+       y = "Number of seats", 
+       z = "Number of seats won by constituency type")
+```
+
+TMC won 82% of the total general or non reserved (168 out of 206) seats, whereas it won 53% (36 out of 68) of the SC and 56 % of the ST (9 out of 16) reserved seats.
+
+BJP won 18% of the total general or non reserved (18 out of 206) seats and 47% of the SC (32 out of 68) and 44 % of the ST (7 out of 16) reserved seats.
+
+```{r}
+ggsave("winners_by_constituency_type.png", width = 20, height = 10, units = "cm")
+```
+
+## Winner by margin of 5000 or less
+
+```{r}
+wb %>% 
+  filter(position == 1) %>% 
+  filter(margin <=5000) %>% 
+  filter(party %in% c("BJP", "AITC")) %>% 
+  count(party, sort = T) %>% 
+  # mutate(party = fct_reorder(party, n)) %>% 
+    ggplot(aes(n, party, fill = party)) + 
+    geom_col(width =  0.4) + 
+  expand_limits(x = c(0, 30))+
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33"
+                                ))+
+  geom_text_repel(aes(label = n), color = "black", hjust = 0.5, vjust =1) +
+  labs(
+    x = "Number of seats", 
+    y = "Party", 
+    title = "Seats won with a margin of 5000 or less"
+  )
+    # ggthemes::theme_wsj()
+```
+
+Total candidates who won by a margin of 5000 or less were 35 or around 12% of the total assembly seats. Out of total 35, 63% or 22 were won by BJP and 37% of 13 were won by TMC.
+
+### Distribution of Candidates Age by Sex
+
+```{r}
+wb %>% 
+  ggplot(aes(age, sex
+             )) +
+  # geom_histogram()
+  geom_boxplot(ize = 0.5, color = "purple", fill = "sky blue") +
+  scale_x_continuous(breaks = c(0, 30, 35, 40, 45, 50, 55, 60, 65, 80))
+  # ggthemes::theme_wsj()
+```
+
+The mean and median age of the candidates in the fray were 47 and three and three quarter of all candidates fell between the age range of 39 to 56. The minimum candidate age was 25 and the maxium age was 89.
+
+## Summmary of all numeric and logical varibles.
+
+```{r}
+wb %>% 
+  summary()
+```
+
+## Distribution of Voting percentage by constituency type
+
+```{r}
+wb %>% 
+  ggplot(aes(x = turnout_percentage, y = constituency_type)) + 
+  geom_boxplot( size = 0.5, color = "purple", fill = "sky blue"
+    
+  )  
+  # ggthemes::theme_wsj()
+
+# geom_histogram()
+```
+
+The average voting percentage in the SC, ST and General seats were xx %, xx % and xx % respectively.
+
+## Distribution of Voting percentage by Sub Region
+
+```{r}
+wb %>% 
+  ggplot(aes(x = turnout_percentage, y = sub_region)) + 
+  geom_boxplot( size = 0.5, color = "purple", fill = "sky blue"
+    
+  ) 
+# + 
+  # ggthemes::theme_wsj()
+```
+
+## Constituency with lower voter turnout
+
+```{r}
+wb %>% 
+  filter(position == 1) %>% 
+  filter(turnout_percentage <= 60) %>% 
+  mutate(constituency_name = fct_reorder(constituency_name, turnout_percentage)) %>% 
+  ggplot(aes(y = constituency_name, x = turnout_percentage, fill = party)) +
+  geom_col() +
+  scale_fill_manual(values = c( AITC = "#33FF9E")) 
+
+
+```
+
+## Constituency with higher voter turnout
+
+```{r}
+wb %>% 
+  filter(position == 1) %>% 
+  filter(turnout_percentage >= 85) %>% 
+  arrange(desc(turnout_percentage))  %>% 
+  head(10) %>% 
+  mutate(constituency_name = fct_reorder(constituency_name, turnout_percentage)) %>% 
+  ggplot(aes(turnout_percentage, constituency_name, fill = party)) +
+  geom_col()  +
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E")) 
+  
+```
+
+
+
+## The CM's Constituency
+
+```{r}
+wb %>% 
+  filter(constituency_name == "NANDIGRAM") %>% 
+  head(3) %>% 
+  mutate(candidate = str_to_title(candidate)) %>% 
+  mutate(candidate = fct_reorder(candidate, votes)) %>% 
+  ggplot(aes(votes, candidate, fill = party)) +
+  geom_col()  +
+  geom_text(aes(label = votes), color = "black", hjust = 0.001) +
+  coord_cartesian(xlim = c(0, 150000)) +
+  scale_fill_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", CPM = "#D52C3C")) 
+```
+
+## Victory Margins across the seats and parties
+
+```{r}
+wb %>% 
+  filter(position == 1) %>% 
+  mutate(party = fct_reorder(party, margin)) %>% 
+  ggplot(aes(margin, party, color = party)) +
+  geom_boxplot(fill = "purple") +
+  # geom_point(position = position_jitter(height = 0, width = 0.8)) +
+  scale_x_continuous(labels = label_comma(), breaks = c(10000, 30000,  50000, 80000, 100000)) +
+  # geom_jitter( size = 3, width = 0.2, height = 0, 
+               # set.seed(123)) +
+  
+  scale_color_manual(values = c( AITC = "#33FF9E", BJP = "#FF8F33", IND = "#33ADFF", RSSCMJP = "#092B4E")) 
+```
+
+## VIP Constinuency
+
+```{r results = FALSE}
+wb %>% 
+  filter(str_detect(candidate, c("Mamata Banerjee", "Locket Chatterjee", "Swapan"))) %>% 
+  select(candidate)
+
+wb %>% 
+filter(position %in% c(1,2,3)) %>% 
+  filter(str_detect(constituency_name, "TARKESWAR")) %>% 
+select(candidate, position) %>% 
+unique() %>% 
+arrange((candidate))
+```
+
+## 
+
+```{r}
+# devtools::install_github("robwhickman/ggparliament")
+
+library(ggparliament)
+```
+
+### References
+
+### APA style
+
+### Authors guidelines \|
+
+#### ADR
